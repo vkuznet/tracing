@@ -152,17 +152,36 @@ func getUserHandler(c *gin.Context) {
 
 	reqCount.Add(ctx, 1, metric.WithAttributes(attribute.String("route", "/user/:id")))
 
-	var name string
-	start := time.Now()
-
-	err := db.QueryRowContext(ctx, "SELECT name FROM users WHERE id = ?", id).Scan(&name)
-	queryTime.Record(ctx, float64(time.Since(start).Milliseconds()),
-		metric.WithAttributes(attribute.String("query", "SELECT user")))
-
+	name, err := fetchUserByID(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{"id": id, "name": name})
+}
+
+func fetchUserByID(ctx context.Context, id string) (string, error) {
+	tr := otel.Tracer("db")
+	ctx, span := tr.Start(ctx, "fetchUserByID")
+	defer span.End()
+
+	// Simulate additional processing
+	time.Sleep(50 * time.Millisecond)
+
+	var name string
+
+	// Trace DB query specifically
+	queryCtx, querySpan := tr.Start(ctx, "SQL SELECT")
+	start := time.Now()
+	err := db.QueryRowContext(queryCtx, "SELECT name FROM users WHERE id = ?", id).Scan(&name)
+	queryTime.Record(queryCtx, float64(time.Since(start).Milliseconds()),
+		metric.WithAttributes(attribute.String("query", "SELECT user")))
+	querySpan.End()
+
+	if err != nil {
+		return "", err
+	}
+
+	return name, nil
 }
