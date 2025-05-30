@@ -33,14 +33,23 @@ cd opentelemetry-gin-sqlite
 ### 2. Run with Stdout Tracing
 
 ```bash
+# you may either use go run
 go run main.go --trace=stdout
+
+# or you may compile code first and run it 
+go build
+./tracer -trace=stdout
 ```
 
 You’ll see spans and metrics printed to the console.
 
-### 3. Run with Jaeger Tracing
 
-Start Jaeger using Docker:
+### 3. Run with Jaeger Tracing
+For jaeger setup you have two options:
+- start jaeger server using its executable, see its download
+  [page](https://www.jaegertracing.io/download/). In this case you simply start
+  the executable `/path/to/jaeger`
+- or, start Jaeger using Docker:
 
 ```bash
 docker run -d --name jaeger \
@@ -52,7 +61,12 @@ docker run -d --name jaeger \
 Then start the app:
 
 ```bash
+# via run command
 go run main.go --trace=jaeger
+
+# via built executable
+go build
+./tracer -trace=jaeger
 ```
 
 Open [http://localhost:16686](http://localhost:16686) to explore traces.
@@ -70,6 +84,18 @@ Response:
 ```json
 {"id":"1","name":"Alice"}
 ```
+
+To simulate the load you may user
+[hey](https://github.com/rakyll/hey) tool and run it as simple as
+```
+hey http://localhost:8080/user/1
+```
+This will simulate load of 200 requests to your server.
+
+Here are a few screen shots of executed workflow in jaeger:
+![image1](images/tracing_jaeger1.png)
+![image2](images/tracing_jaeger2.png)
+![image3](images/tracing_jaeger3.png)
 
 ### 5. View Metrics
 
